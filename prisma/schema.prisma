@@ -1,0 +1,347 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tank {
+  id                String  @id @default(cuid())
+  name              String?
+  fuelType          String?
+  currentLevel      Float?
+  capacity          Float?
+  securityThreshold Float?
+  temperature       Float?
+  status            String?
+  Pump              Pump[]
+
+  @@map("TANK")
+}
+
+model Product {
+  id           String  @id @default(cuid())
+  name         String?
+  category     String?
+  unit         String?
+  stock        Int?
+  minThreshold Int?
+  status       String?
+
+  purchaseOrderItems PurchaseOrderItem[]
+  salesTransactions  SalesTransaction[]
+  Pump               Pump[]
+
+  @@map("PRODUCT")
+}
+
+model Supplier {
+  id   String  @id @default(cuid())
+  name String?
+
+  purchaseOrders Purchasing[]
+  expenses       Expense[]
+
+  @@map("SUPPLIER")
+}
+
+model Purchasing {
+  id               String    @id @default(cuid())
+  supplierId       String?
+  orderDate        DateTime?
+  expectedDelivery DateTime?
+  notes            String?
+
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  purchaseOrderItems PurchaseOrderItem[]
+
+  @@map("PURCHASE_ORDER")
+}
+
+model PurchaseOrderItem {
+  id        String  @id @default(cuid())
+  orderId   String?
+  productId String?
+  quantity  Int?
+
+  order   Purchasing? @relation(fields: [orderId], references: [id])
+  product Product?    @relation(fields: [productId], references: [id])
+
+  @@map("PURCHASE_ORDER_ITEM")
+}
+
+model Role {
+  id   String  @id @default(cuid())
+  name String?
+
+  userRoles UserRole[]
+
+  @@map("ROLE")
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("USER_ROLE")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  fullName  String?
+  email     String?
+  roles     String?
+  status    String?
+  lastLogin DateTime?
+
+  userRoles         UserRole[]
+  salesTransactions SalesTransaction[]
+  teamAssignments   TeamAssignment[]
+  attendances       Attendance[]
+  absences          Absence[]
+
+  @@map("USER")
+}
+
+model SalesTransaction {
+  id              String    @id @default(cuid())
+  employeeId      String?
+  date            DateTime?
+  shift           Int?
+  volume          Float?
+  amount          Float?
+  productId       String?
+  clientAccountId String?
+  pumpId          String?
+  paymentMethod   String?
+  unitPrice       Float?
+  discount        Float?
+
+  employee      User?          @relation(fields: [employeeId], references: [id])
+  product       Product?       @relation(fields: [productId], references: [id])
+  clientAccount ClientAccount? @relation(fields: [clientAccountId], references: [id])
+  pump          Pump?          @relation(fields: [pumpId], references: [id])
+
+  @@map("SALES_TRANSACTION")
+}
+
+model ClientAccount {
+  id              String  @id @default(cuid())
+  companyName     String?
+  currentBalance  Float?
+  creditLimit     Float?
+  availableCredit Float?
+  status          String?
+  type            String?
+
+  salesTransactions SalesTransaction[]
+  accountStatements AccountStatement[]
+  invoices          Invoice[]
+
+  @@map("CLIENT_ACCOUNT")
+}
+
+model Customer {
+  id      String  @id @default(cuid())
+  name    String?
+  contact String?
+  email   String?
+  type    String?
+  status  String?
+
+  claims Claim[]
+
+  @@map("CUSTOMER")
+}
+
+model AccountStatement {
+  id              String    @id @default(cuid())
+  clientAccountId String?
+  startDate       DateTime?
+  endDate         DateTime?
+  initialBalance  Float?
+  finalBalance    Float?
+
+  clientAccount         ClientAccount?         @relation(fields: [clientAccountId], references: [id])
+  accountStatementLines AccountStatementLine[]
+
+  @@map("ACCOUNT_STATEMENT")
+}
+
+model AccountStatementLine {
+  id                 String    @id @default(cuid())
+  statementId        String?
+  date               DateTime?
+  description        String?
+  debit              Float?
+  credit             Float?
+  progressiveBalance Float?
+
+  statement AccountStatement? @relation(fields: [statementId], references: [id])
+
+  @@map("ACCOUNT_STATEMENT_LINE")
+}
+
+model ActivityReport {
+  id                String    @id @default(cuid())
+  startDate         DateTime?
+  endDate           DateTime?
+  totalVolume       Float?
+  totalAmount       Float?
+  totalTransactions Int?
+
+  @@map("ACTIVITY_REPORT")
+}
+
+model MarginAnalysis {
+  id           String    @id @default(cuid())
+  startDate    DateTime?
+  endDate      DateTime?
+  totalRevenue Float?
+  totalCost    Float?
+  grossMargin  Float?
+  marginRate   Float?
+
+  @@map("MARGIN_ANALYSIS")
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  date        DateTime?
+  description String?
+  category    String?
+  amount      Float?
+  supplierId  String?
+
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+
+  @@map("EXPENSE")
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  clientAccountId String?
+  amountDue       Float?
+  amountToInvoice Float?
+  amountPaid      Float?
+  dateIssued      DateTime?
+  status          String?
+
+  clientAccount ClientAccount? @relation(fields: [clientAccountId], references: [id])
+
+  @@map("INVOICE")
+}
+
+model Claim {
+  id          String    @id @default(cuid())
+  customerId  String?
+  date        DateTime?
+  type        String?
+  status      String?
+  description String?
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@map("CLAIM")
+}
+
+model MaintenanceIntervention {
+  id          String    @id @default(cuid())
+  date        DateTime?
+  equipment   String?
+  description String?
+  type        String?
+  technician  String?
+  status      String?
+
+  @@map("MAINTENANCE_INTERVENTION")
+}
+
+model Pump {
+  id           String  @id @default(cuid())
+  name         String
+  fuelTypeId   String
+  sourceTankId String
+  status       String?
+
+  fuel              Product?           @relation(fields: [fuelTypeId], references: [id])
+  sourceTank        Tank?              @relation(fields: [sourceTankId], references: [id])
+  salesTransactions SalesTransaction[]
+  teamAssignments   TeamAssignment[]
+
+  @@map("PUMP")
+}
+
+model TeamAssignment {
+  id         String    @id @default(cuid())
+  date       DateTime?
+  shiftId    String
+  employeeId String
+  role       String?
+  pumpId     String?
+
+  shift    Shift? @relation(fields: [shiftId], references: [id])
+  employee User?  @relation(fields: [employeeId], references: [id])
+  pump     Pump?  @relation(fields: [pumpId], references: [id])
+
+  @@map("TEAM_ASSIGNMENT")
+}
+
+model Shift {
+  id        String    @id @default(cuid())
+  shiftDate DateTime?
+  shiftType String?
+  startTime String?
+  endTime   String?
+  notes     String?
+
+  teamAssignments TeamAssignment[]
+  attendances     Attendance[]
+
+  @@map("SHIFT")
+}
+
+model Attendance {
+  id            String    @id @default(cuid())
+  userId        String
+  shiftId       String
+  arrivalTime   DateTime?
+  departureTime DateTime?
+  status        String?
+  reason        String?
+
+  user  User  @relation(fields: [userId], references: [id])
+  shift Shift @relation(fields: [shiftId], references: [id])
+
+  @@map("ATTENDANCE")
+}
+
+model Absence {
+  id            String    @id @default(cuid())
+  userId        String
+  absenceTypeId String
+  startDate     DateTime?
+  endDate       DateTime?
+  reason        String?
+  justification String?
+
+  user        User        @relation(fields: [userId], references: [id])
+  absenceType AbsenceType @relation(fields: [absenceTypeId], references: [id])
+
+  @@map("ABSENCE")
+}
+
+model AbsenceType {
+  id   String  @id @default(cuid())
+  name String?
+
+  absences Absence[]
+
+  @@map("ABSENCE_TYPE")
+}
