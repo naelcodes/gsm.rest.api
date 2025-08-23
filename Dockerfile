@@ -45,7 +45,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 # Optional: if you use .env
-# COPY .env .env
+COPY .env .env
 
 # Run migrations then start app
 CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm start:prod"]
